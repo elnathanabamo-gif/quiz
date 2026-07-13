@@ -172,7 +172,12 @@ app.post('/api/generate-quiz', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Quiz Wizard API running on http://localhost:${PORT}`);
-  console.log(`OpenAI configured: ${Boolean(process.env.OPENAI_API_KEY?.trim())}`);
-});
+// Conditionally run express app listener only if not deployed as a Serverless Function on Vercel
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Quiz Wizard API running on http://localhost:${PORT}`);
+    console.log(`OpenAI configured: ${Boolean(process.env.OPENAI_API_KEY?.trim())}`);
+  });
+}
+
+export default app;

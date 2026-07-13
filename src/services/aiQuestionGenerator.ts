@@ -82,10 +82,47 @@ class AIQuestionGenerator {
       throw new Error('No questions returned from AI');
     }
 
-    return data.questions.map((q: Question, index: number) => ({
-      ...q,
-      id: index + 1,
-    }));
+    return data.questions.map((q: Question, index: number) => {
+      let normalizedAnswer = q.correctAnswer;
+      
+      // Normalize multiple-choice answer mapping if AI returned the option text instead of 'A', 'B', 'C', or 'D'
+      if (q.type === 'multiple-choice' && q.options && q.options.length > 0) {
+        const cleanAnswer = q.correctAnswer.trim().toLowerCase();
+        
+        if (/^[a-d]$/i.test(cleanAnswer)) {
+          normalizedAnswer = cleanAnswer.toUpperCase();
+        } else {
+          // Find option index that matches the text
+          const matchingIndex = q.options.findIndex(
+            (opt) => opt.trim().toLowerCase() === cleanAnswer
+          );
+          if (matchingIndex !== -1) {
+            normalizedAnswer = String.fromCharCode(65 + matchingIndex);
+          } else {
+            // Fallback: check if the answer is inside an option string or vice-versa
+            const partialIndex = q.options.findIndex(
+              (opt) => opt.trim().toLowerCase().includes(cleanAnswer) || cleanAnswer.includes(opt.trim().toLowerCase())
+            );
+            if (partialIndex !== -1) {
+              normalizedAnswer = String.fromCharCode(65 + partialIndex);
+            }
+          }
+        }
+      } else if (q.type === 'true-false') {
+        const cleanAnswer = q.correctAnswer.trim().toLowerCase();
+        if (cleanAnswer === 'true' || cleanAnswer === 't' || cleanAnswer === '1' || cleanAnswer === 'yes') {
+          normalizedAnswer = 'true';
+        } else if (cleanAnswer === 'false' || cleanAnswer === 'f' || cleanAnswer === '0' || cleanAnswer === 'no') {
+          normalizedAnswer = 'false';
+        }
+      }
+
+      return {
+        ...q,
+        id: index + 1,
+        correctAnswer: normalizedAnswer,
+      };
+    });
   }
 
   private generateLocalQuestions(content: ExtractedContent, config: QuizConfig): Question[] {
@@ -199,6 +236,27 @@ class AIQuestionGenerator {
     const concept = concepts[id % concepts.length];
     const relatedSentence = sentences.find((s) => s.toLowerCase().includes(concept)) || sentences[id % sentences.length];
 
+    const rawOptions = [
+      relatedSentence.slice(0, 80) || `It is discussed as an important topic`,
+      `It is not mentioned in the text`,
+      `It is explicitly refuted by the author`,
+      `It is only briefly mentioned as a side note`,
+    ];
+
+    // Shuffle options so 'A' is not always correct
+    const optionsWithIndex = rawOptions.map((opt, idx) => ({ opt, originalIdx: idx }));
+    // Simple deterministic shuffle using ID so the correct answer is stable
+    const offset = id % 4;
+    const shuffled = [...optionsWithIndex];
+    for (let i = 0; i < offset; i++) {
+      const first = shuffled.shift();
+      if (first) shuffled.push(first);
+    }
+
+    const options = shuffled.map(o => o.opt);
+    const correctIdx = shuffled.findIndex(o => o.originalIdx === 0);
+    const correctAnswer = String.fromCharCode(65 + correctIdx);
+
     return {
       id,
       question:
@@ -206,13 +264,8 @@ class AIQuestionGenerator {
           ? `According to the document, what is mentioned about ${concept}?`
           : `Based on the document, which statement about "${concept}" is most accurate?`,
       type: 'multiple-choice',
-      options: [
-        relatedSentence.slice(0, 80) || `It is discussed as an important topic`,
-        `It is not mentioned at all`,
-        `It contradicts the main arguments`,
-        `It is only briefly referenced`,
-      ],
-      correctAnswer: 'A',
+      options,
+      correctAnswer,
     };
   }
 
@@ -248,16 +301,21 @@ class AIQuestionGenerator {
 
   private generateDescriptiveQuestion(id: number, concepts: string[], difficulty: string): Question {
     const concept = concepts[id % concepts.length];
-    const question =
-      difficulty === 'hard'
-        ? `Analyze the document's treatment of ${concept} and its implications.`
-        : `Explain the significance of ${concept} based on the document.`;
+    const questionsPool = [
+      `Analyze the significance of "${concept}" as presented in the document.`,
+      `Explain the main points or features related to "${concept}" according to the text.`,
+      `Describe how "${concept}" contributes to the main arguments or findings in the document.`,
+      `Discuss the context and implications of "${concept}" based on the text.`
+    ];
+    const question = difficulty === 'hard'
+      ? `Provide an in-depth analysis of "${concept}" and its implications as discussed in the document.`
+      : questionsPool[id % questionsPool.length];
 
     return {
       id,
       question,
       type: 'descriptive',
-      correctAnswer: `Based on the document, ${concept} is an important element that requires analysis within the context of the main subject matter.`,
+      correctAnswer: `Based on the document, "${concept}" is a significant subject. An adequate response should explain its definition, outline the related facts, and evaluate its context within the text.`,
     };
   }
 

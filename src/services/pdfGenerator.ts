@@ -1,8 +1,9 @@
 import jsPDF from 'jspdf';
 import { Question } from './questionGenerator';
+import { QuizConfig } from '@/components/QuizConfiguration';
 
 class PDFGenerator {
-  generateQuizPDF(questions: Question[], fileName: string, config: any): Blob {
+  generateQuizPDF(questions: Question[], fileName: string, config: QuizConfig): Blob {
     const doc = new jsPDF();
     
     // Set up the document

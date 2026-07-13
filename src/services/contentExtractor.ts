@@ -1,6 +1,7 @@
 import mammoth from 'mammoth';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import * as XLSX from 'xlsx';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -93,8 +94,19 @@ class ContentExtractor {
 
   private async extractFromExcel(file: File): Promise<string> {
     try {
-      const text = await file.text();
-      return text.replace(/[^\w\s.,!?;:-]/gi, ' ').replace(/\s+/g, ' ');
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      let text = '';
+
+      workbook.SheetNames.forEach((sheetName) => {
+        const worksheet = workbook.Sheets[sheetName];
+        const csv = XLSX.utils.sheet_to_csv(worksheet);
+        if (csv && csv.trim()) {
+          text += `[Sheet: ${sheetName}]\n${csv}\n\n`;
+        }
+      });
+
+      return text;
     } catch (error) {
       console.error('Excel extraction error:', error);
       throw new Error('Failed to extract text from Excel file');

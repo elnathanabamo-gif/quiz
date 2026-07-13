@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { QuizConfig } from '@/components/QuizConfiguration';
+import { Question } from '@/services/aiQuestionGenerator';
 
 interface QuizProps {
   config: QuizConfig;
   fileName: string;
-  questions: any[];
+  questions: Question[];
   onBack: () => void;
   onStartQuiz: () => void;
   onDownloadPDF: () => void;

@@ -14,10 +14,12 @@ export interface QuizConfig {
   difficulty: 'easy' | 'normal' | 'hard';
 }
 
-interface QuizConfigurationProps {
-  onConfigurationComplete: (config: QuizConfig) => void;
-  fileName: string;
-}
+const typeColors: Record<QuizConfig['type'], { bg: string; text: string }> = {
+  'true-false': { bg: 'bg-quiz-true-false/10', text: 'text-quiz-true-false' },
+  'multiple-choice': { bg: 'bg-quiz-multiple-choice/10', text: 'text-quiz-multiple-choice' },
+  'fill-blank': { bg: 'bg-quiz-fill-blank/10', text: 'text-quiz-fill-blank' },
+  'descriptive': { bg: 'bg-quiz-descriptive/10', text: 'text-quiz-descriptive' },
+};
 
 const QuizConfiguration: React.FC<QuizConfigurationProps> = ({ 
   onConfigurationComplete, 
@@ -115,7 +117,8 @@ const QuizConfiguration: React.FC<QuizConfigurationProps> = ({
                     <div className="flex items-start space-x-4">
                       <div className={cn(
                         "p-3 rounded-lg",
-                        `bg-${type.color}/10 text-${type.color}`
+                        typeColors[type.id].bg,
+                        typeColors[type.id].text
                       )}>
                         <Icon className="w-6 h-6" />
                       </div>

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Welcome to your Lovable project
 
 ## Project info
@@ -72,6 +71,3 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
-=======
-# quizwizard
->>>>>>> 0c55528a011fbbc0e59e205ae88c7bb9e95acb05
